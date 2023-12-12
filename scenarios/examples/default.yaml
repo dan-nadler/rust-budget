@@ -1,0 +1,12 @@
+name: Example
+balance: 100.00
+start_date: 2020-01-01
+end_date: 2020-02-29
+cash_flows:
+  - name: Income
+    amount: 100.00
+    frequency: SemiMonthly
+    start_date: null
+    end_date: null
+    tax_rate: 0.5
+  
