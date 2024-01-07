@@ -1,3 +1,5 @@
+# About
+
 I had to do some budgetting and used it as an excuse to learn Rust.
 
 This works by defining an "account" as a YAML file. The account includes a starting 
@@ -8,3 +10,9 @@ Use this by running `cargo run -- --run-sim --config path/to/your/account.yaml`
 
 Optionally include `--excel path/to/excel_output.xlsx` to write the time series of cash flows and account 
 balance to an excel file.
+
+
+# Plans for the future
+
+- Basic portfolio management and investment forecasts
+- Monte carlo forecasting
