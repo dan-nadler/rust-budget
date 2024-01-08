@@ -1,6 +1,8 @@
 use chrono::{Datelike, NaiveDate};
+use memoize::memoize;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::hash::{Hash, Hasher};
 
 // a list contianing the number of days in each month
 pub const DAYS_IN_MONTH: [u32; 12] = [
@@ -93,7 +95,7 @@ impl CashFlow {
         // returns a vec of payments
         let mut d = start_date.pred_opt().unwrap();
         let mut payments: Vec<Payment> = vec![];
-        
+
         // If tax payments have been requests, but the tax rate is 0, return an empty vec
         if tax_payments && self.tax_rate == 0.0 {
             return payments;
@@ -156,22 +158,26 @@ impl CashFlow {
 
             let mut p = Payment::new(
                 d,
-                if tax_payments {self.amount * -self.tax_rate} else {self.amount},
+                if tax_payments {
+                    self.amount * -self.tax_rate
+                } else {
+                    self.amount
+                },
                 self.clone(),
             );
 
             if tax_payments {
-                p.cash_flow.set_name(format!("{} Tax", self.name.clone().unwrap()));
+                p.cash_flow
+                    .set_name(format!("{} Tax", self.name.clone().unwrap()));
             }
 
             payments.push(p.clone());
-            
         }
         payments
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema, Clone)]
 pub struct Account {
     pub name: String,
     pub balance: f32,
@@ -241,4 +247,136 @@ impl Account {
         flows.sort_by(|a, b| a.date.cmp(&b.date));
         flows
     }
+}
+
+impl std::cmp::PartialEq for Account {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
+impl std::cmp::Eq for Account {}
+
+impl std::hash::Hash for Account {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+    }
+}
+
+#[test]
+fn test_account_hash() {
+    // test that the account hash is based on the name
+    let mut account1 = Account::new(
+        "Test Account".to_string(),
+        0.0,
+        vec![CashFlow::new(
+            Some("Test Cash Flow".to_string()),
+            100.0,
+            Some(Frequency::MonthStart),
+            None,
+            None,
+            None,
+        )],
+        NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+        NaiveDate::from_ymd_opt(2020, 12, 31).unwrap(),
+    );
+
+    let mut account2 = Account::new(
+        "Test Account 2".to_string(),
+        0.0,
+        vec![CashFlow::new(
+            Some("Test Cash Flow".to_string()),
+            100.0,
+            Some(Frequency::MonthStart),
+            None,
+            None,
+            None,
+        )],
+        NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+        NaiveDate::from_ymd_opt(2020, 12, 31).unwrap(),
+    );
+
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    account1.hash(&mut hasher);
+    let hash1 = hasher.finish();
+
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    account2.hash(&mut hasher);
+    let hash2 = hasher.finish();
+
+    assert_ne!(hash1, hash2);
+}
+
+#[memoize]
+pub fn get_account_balance_at(account: Account, date: chrono::NaiveDate) -> f32 {
+    let mut a = account.clone();
+    let f = a.flows_at(date);
+    let mut b: f32 = 0.0;
+    if date > a.start_date {
+        b = get_account_balance_at(a, date - chrono::Duration::days(1));
+    }
+    b + f.iter().fold(0.0, |acc, x| acc + x.amount)
+}
+
+#[test]
+fn test_get_account_balance_at() {
+    let mut account = Account::new(
+        "Test Account".to_string(),
+        0.0,
+        vec![CashFlow::new(
+            Some("Test Cash Flow".to_string()),
+            100.0,
+            Some(Frequency::MonthStart),
+            None,
+            None,
+            None,
+        )],
+        NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+        NaiveDate::from_ymd_opt(2020, 12, 31).unwrap(),
+    );
+    let balance = get_account_balance_at(
+        account.clone(),
+        NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+    );
+    assert_eq!(balance, 100.0);
+    let balance = get_account_balance_at(
+        account.clone(),
+        NaiveDate::from_ymd_opt(2020, 1, 2).unwrap(),
+    );
+    assert_eq!(balance, 100.0);
+    let balance = get_account_balance_at(
+        account.clone(),
+        NaiveDate::from_ymd_opt(2020, 1, 31).unwrap(),
+    );
+    assert_eq!(balance, 100.0);
+    let balance = get_account_balance_at(
+        account.clone(),
+        NaiveDate::from_ymd_opt(2020, 2, 1).unwrap(),
+    );
+    assert_eq!(balance, 200.0);
+    let balance = get_account_balance_at(
+        account.clone(),
+        NaiveDate::from_ymd_opt(2020, 2, 2).unwrap(),
+    );
+    assert_eq!(balance, 200.0);
+    let balance = get_account_balance_at(
+        account.clone(),
+        NaiveDate::from_ymd_opt(2020, 2, 29).unwrap(),
+    );
+    assert_eq!(balance, 200.0);
+    let balance = get_account_balance_at(
+        account.clone(),
+        NaiveDate::from_ymd_opt(2020, 3, 1).unwrap(),
+    );
+    assert_eq!(balance, 300.0);
+    let balance = get_account_balance_at(
+        account.clone(),
+        NaiveDate::from_ymd_opt(2020, 3, 2).unwrap(),
+    );
+    assert_eq!(balance, 300.0);
+    let balance = get_account_balance_at(
+        account.clone(),
+        NaiveDate::from_ymd_opt(2020, 3, 31).unwrap(),
+    );
+    assert_eq!(balance, 300.0);
 }

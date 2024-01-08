@@ -17,6 +17,7 @@ schemars = { version = "0.8.16", features = [ "chrono" ] }
 rand_distr = { version = "0.4.3", features = [ "serde" ] }
 rand = "0.8.5"
 xlsxwriter = "0.6.0"
+memoize = "0.4.2"
 
 [lib]
 name = "budget"
