@@ -10,7 +10,7 @@
   "properties": {
     "amount": {
       "type": "number",
-      "format": "float"
+      "format": "double"
     },
     "cash_flow": {
       "$ref": "#/definitions/CashFlow"
@@ -31,7 +31,7 @@
       "properties": {
         "amount": {
           "type": "number",
-          "format": "float"
+          "format": "double"
         },
         "end_date": {
           "type": [
@@ -58,7 +58,7 @@
         },
         "tax_rate": {
           "type": "number",
-          "format": "float"
+          "format": "double"
         }
       }
     },

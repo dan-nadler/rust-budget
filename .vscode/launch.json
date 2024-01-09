@@ -22,7 +22,16 @@
             "request": "launch",
             "name": "Debug Rust",
             "program": "${workspaceFolder}/target/debug/budget",
-            "args": ["--run-sim", "--config", "${workspaceFolder}/scenarios/examples/default.yaml --excel ${workspaceFolder}/scenarios/examples/default.xlsx"]
+            // "args": ["--run-sim", "--config", "${workspaceFolder}/scenarios/examples/default.yaml", "--excel", "${workspaceFolder}/scenarios/examples/default.xlsx"]
+            "args": [
+                "--run-sim",
+                "--config",
+                "${workspaceFolder}/scenarios/default/fidelity_account.yaml",
+                "--excel",
+                "${workspaceFolder}/scenarios/default/fidelity.xlsx",
+                "--portfolio",
+                "${workspaceFolder}/scenarios/default/6040_portfolio.yaml"
+            ]
         }
     ]
 }

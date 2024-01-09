@@ -23,25 +23,82 @@ pub const DAYS_IN_MONTH: [u32; 12] = [
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub enum Frequency {
     Once,
-    // Weekly,
-    // BiWeekly,
-    SemiMonthly,
     MonthStart,
     MonthEnd,
-    // Quarterly,
-    // SemiAnnually,
+    SemiMonthly,
     Annually,
 }
+
+impl Frequency {
+    pub fn fraction(&self) -> f64 {
+        match self {
+            Frequency::Once => 1.0,
+            Frequency::MonthStart => 1.0 / 12.0,
+            Frequency::MonthEnd => 1.0 / 12.0,
+            Frequency::SemiMonthly => 1.0 / 24.0,
+            Frequency::Annually => 1.0,
+        }
+    }
+
+    pub fn matches(&self, d: &chrono::NaiveDate, start_date: &Option<chrono::NaiveDate>, end_date: &Option<chrono::NaiveDate>) -> bool {
+        if let Some(start_date) = start_date {
+            if start_date > d {
+                return false;
+            }
+        }
+        if let Some(end_date) = end_date {
+            if end_date < d {
+                return false;
+            }
+        }
+
+        match self {
+            Frequency::Once => {
+                if let Some(start_date) = start_date {
+                    if start_date != d {
+                        return false;
+                    }
+                }
+            }
+            Frequency::MonthStart => {
+                if d.day() != 1 {
+                    return false;
+                }
+            }
+            Frequency::MonthEnd => {
+                let last_day_of_month = DAYS_IN_MONTH[(d.month() as usize) - 1];
+                if d.day() != last_day_of_month {
+                    return false;
+                }
+            }
+            Frequency::SemiMonthly => {
+                let last_day_of_month = DAYS_IN_MONTH[(d.month() as usize) - 1];
+                if d.day() != last_day_of_month && d.day() != 15 {
+                    return false;
+                }
+            }
+            Frequency::Annually => {
+                let sd = start_date.unwrap();
+                if d.month() != sd.month() || d.day() != sd.day() {
+                    return false;
+                }
+            }
+        }
+
+        true
+    }
+}
+
 
 #[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 pub struct Payment {
     pub cash_flow: CashFlow,
     pub date: NaiveDate,
-    pub amount: f32,
+    pub amount: f64,
 }
 
 impl Payment {
-    pub fn new(date: NaiveDate, amount: f32, cash_flow: CashFlow) -> Payment {
+    pub fn new(date: NaiveDate, amount: f64, cash_flow: CashFlow) -> Payment {
         Payment {
             date,
             amount,
@@ -53,11 +110,11 @@ impl Payment {
 #[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 pub struct CashFlow {
     pub name: Option<String>,
-    pub amount: f32,
+    pub amount: f64,
     pub frequency: Frequency,
     pub start_date: Option<chrono::NaiveDate>,
     pub end_date: Option<chrono::NaiveDate>,
-    pub tax_rate: f32,
+    pub tax_rate: f64,
 }
 
 impl CashFlow {
@@ -66,11 +123,11 @@ impl CashFlow {
     // frequency is optional with default value of "once"
     pub fn new(
         name: Option<String>,
-        amount: f32,
+        amount: f64,
         frequency: Option<Frequency>,
         start_date: Option<chrono::NaiveDate>,
         end_date: Option<chrono::NaiveDate>,
-        tax_rate: Option<f32>,
+        tax_rate: Option<f64>,
     ) -> CashFlow {
         CashFlow {
             name,
@@ -104,74 +161,24 @@ impl CashFlow {
         while d < end_date {
             d = d.succ_opt().unwrap();
 
-            // handle start and end dates
-            if let Some(start_date) = &self.start_date {
-                if start_date > &d {
-                    continue;
-                }
-            }
-            if let Some(end_date) = &self.end_date {
-                if end_date < &d {
-                    continue;
-                }
-            }
-
-            // handle 'once' frequency
-            if let Frequency::Once = &self.frequency {
-                if let Some(start_date) = &self.start_date {
-                    if start_date != &d {
-                        continue;
-                    }
-                }
-            }
-
-            // handle 'month-start' frequency
-            if let Frequency::MonthStart = &self.frequency {
-                if d.day() != 1 {
-                    continue;
-                }
-            }
-
-            //handle 'month-end' frequency
-            if let Frequency::MonthEnd = &self.frequency {
-                let last_day_of_month = DAYS_IN_MONTH[(d.month() as usize) - 1];
-                if d.day() != last_day_of_month {
-                    continue;
-                }
-            }
-
-            // handle 'semi-monthly' frequency
-            if let Frequency::SemiMonthly = &self.frequency {
-                let last_day_of_month = DAYS_IN_MONTH[(d.month() as usize) - 1];
-                if d.day() != last_day_of_month && d.day() != 15 {
-                    continue;
-                }
-            }
-
-            // handle 'annually' frequency
-            if let Frequency::Annually = &self.frequency {
-                let sd = &self.start_date.unwrap();
-                if d.month() != sd.month() || d.day() != sd.day() {
-                    continue;
-                }
-            }
-
-            let mut p = Payment::new(
-                d,
+            if self.frequency.matches(&d, &self.start_date, &self.end_date) {
+                let mut p = Payment::new(
+                    d,
+                    if tax_payments {
+                        self.amount * -self.tax_rate
+                    } else {
+                        self.amount
+                    },
+                    self.clone(),
+                );
+    
                 if tax_payments {
-                    self.amount * -self.tax_rate
-                } else {
-                    self.amount
-                },
-                self.clone(),
-            );
-
-            if tax_payments {
-                p.cash_flow
-                    .set_name(format!("{} Tax", self.name.clone().unwrap()));
+                    p.cash_flow
+                        .set_name(format!("{} Tax", self.name.clone().unwrap()));
+                }
+    
+                payments.push(p.clone());
             }
-
-            payments.push(p.clone());
         }
         payments
     }
@@ -180,7 +187,7 @@ impl CashFlow {
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Clone)]
 pub struct Account {
     pub name: String,
-    pub balance: f32,
+    pub balance: f64,
     pub cash_flows: Vec<CashFlow>,
     pub start_date: chrono::NaiveDate,
     pub end_date: chrono::NaiveDate,
@@ -189,7 +196,7 @@ pub struct Account {
 impl Account {
     pub fn new(
         name: String,
-        balance: f32,
+        balance: f64,
         cash_flows: Vec<CashFlow>,
         start_date: chrono::NaiveDate,
         end_date: chrono::NaiveDate,
@@ -222,7 +229,7 @@ impl Account {
         payments
     }
 
-    pub fn balance_at(&mut self, date: chrono::NaiveDate) -> f32 {
+    pub fn balance_at(&mut self, date: chrono::NaiveDate) -> f64 {
         let mut balance = self.balance;
         for cash_flow in &mut self.cash_flows {
             let payments = cash_flow.payments(self.start_date, date, false);
@@ -308,10 +315,10 @@ fn test_account_hash() {
 }
 
 #[memoize]
-pub fn get_account_balance_at(account: Account, date: chrono::NaiveDate) -> f32 {
+pub fn get_account_balance_at(account: Account, date: chrono::NaiveDate) -> f64 {
     let mut a = account.clone();
     let f = a.flows_at(date);
-    let mut b: f32 = 0.0;
+    let mut b: f64 = 0.0;
     if date > a.start_date {
         b = get_account_balance_at(a, date - chrono::Duration::days(1));
     }

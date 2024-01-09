@@ -1,17 +1,21 @@
 use serde::Serialize;
+
+use self::portfolio::Invest;
+use crate::sim::cash::Frequency;
 pub mod cash;
 pub mod excel;
+pub mod portfolio;
 
 #[allow(dead_code)]
 #[derive(Serialize, Clone)]
 pub struct AccountBalance {
     pub date: chrono::NaiveDate,
     pub account_name: String,
-    pub balance: f32,
+    pub balance: f64,
 }
 
 impl AccountBalance {
-    fn new(date: chrono::NaiveDate, account_name: String, balance: f32) -> AccountBalance {
+    fn new(date: chrono::NaiveDate, account_name: String, balance: f64) -> AccountBalance {
         AccountBalance {
             date,
             account_name,
@@ -32,7 +36,12 @@ impl SimulationResult {
     }
 }
 
-pub fn run_simulation(mut account: cash::Account) -> SimulationResult {
+pub fn run_simulation(
+    mut account: cash::Account,
+    portfolio: Option<portfolio::Portfolio>,
+) -> SimulationResult {
+    let rebalance_frequency = Frequency::MonthStart;
+
     // read config from file account.yaml
     println!("--- Beginning Simulation ---");
     println!("Loaded Account: {}\n", account.name);
@@ -43,10 +52,21 @@ pub fn run_simulation(mut account: cash::Account) -> SimulationResult {
 
     while d < account.end_date {
         let b = account.balance_at(d);
+
+        // TODO: This attributes the full future month's investment income to the first day of the month. This is not correct.
+        if rebalance_frequency.matches(&d, &Some(account.start_date), &Some(account.end_date)) {
+            if portfolio.is_some() {
+                let i =
+                    account.invest(portfolio.as_ref().unwrap()) * rebalance_frequency.fraction();
+                println!("Investment income of {}, on {}", i, d);
+            }
+        }
         println!("{}, {} balance, {}", d, account.name, b);
+
         results
             .balances
             .push(AccountBalance::new(d, account.name.clone(), b));
+
         d = d.succ_opt().unwrap();
     }
 
@@ -64,10 +84,9 @@ pub fn run_simulation(mut account: cash::Account) -> SimulationResult {
     results
 }
 
-
 #[test]
 fn test() {
     let config = std::fs::read_to_string("./scenarios/examples/default.yaml").unwrap();
     let account: cash::Account = serde_yaml::from_str(&config).unwrap();
-    run_simulation(account);
+    run_simulation(account, None);
 }
