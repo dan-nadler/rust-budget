@@ -12,10 +12,14 @@ Optionally include `--excel path/to/excel_output.xlsx` to write the time series 
 balance to an excel file.
 
 # Plans for the future
-- Basic portfolio management and investment forecasts
-- Monte carlo forecasting
-- Web API
-- Better Excel outputs
+- [x] ~Define portfolios to use with accounts~ ✔️
+- [x] ~Excel exports~ ✔️
+- [ ] Basic portfolio management and investment forecasts
+- [ ] Monte carlo forecasting
+- [ ] Web API
+- [ ] Better Excel exports
+  - [ ] Pivots
+  - [ ] Charts
 
 # Other thoughts
 - Integrating the API with ChatGPT might be neat if it works well
