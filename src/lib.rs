@@ -1,4 +1,4 @@
 pub mod sim;
-pub mod api;
+mod api;
 mod database;
 

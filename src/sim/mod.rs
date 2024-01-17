@@ -5,6 +5,7 @@ use crate::sim::cash::Frequency;
 pub mod cash;
 pub mod excel;
 pub mod portfolio;
+mod sample;
 
 #[allow(dead_code)]
 #[derive(Serialize, Clone)]
@@ -39,12 +40,15 @@ impl SimulationResult {
 pub fn run_simulation(
     mut account: cash::Account,
     portfolio: Option<portfolio::Portfolio>,
+    print_results: bool,
 ) -> SimulationResult {
     let rebalance_frequency = Frequency::MonthStart;
 
     // read config from file account.yaml
-    println!("--- Beginning Simulation ---");
-    println!("Loaded Account: {}\n", account.name);
+    if print_results {
+        println!("--- Beginning Simulation ---");
+        println!("Loaded Account: {}\n", account.name);
+    }
 
     let mut results = SimulationResult::new(vec![], vec![]);
 
@@ -58,11 +62,15 @@ pub fn run_simulation(
             if portfolio.is_some() {
                 let i =
                     account.invest(portfolio.as_ref().unwrap()) * rebalance_frequency.fraction();
-                println!("Investment income of {}, on {}", i, d);
+                if print_results {
+                    println!("Investment income of {}, on {}", i, d);
+                }
             }
         }
-        println!("{}, {} balance, {}", d, account.name, b);
 
+        if print_results {
+            println!("{}, {} balance, {}", d, account.name, b);
+        }
         results
             .balances
             .push(AccountBalance::new(d, account.name.clone(), b));
@@ -74,19 +82,23 @@ pub fn run_simulation(
     while d < account.end_date {
         let flows = account.flows_at(d);
         for f in &flows {
-            println!("{}, {}, {}", d, f.cash_flow.name.clone().unwrap(), f.amount);
+            if print_results {
+                println!("{}, {}, {}", d, f.cash_flow.name.clone().unwrap(), f.amount);
+            }
             results.payments.push(f.clone());
         }
         d = d.succ_opt().unwrap();
     }
 
-    println!("--- End of Simulation ---");
+    if print_results {
+        println!("--- End of Simulation ---");
+    }
     results
 }
 
 #[test]
 fn test() {
-    let config = std::fs::read_to_string("./scenarios/examples/default.yaml").unwrap();
+    let config = std::fs::read_to_string("./scenarios/examples/default_account.yaml").unwrap();
     let account: cash::Account = serde_yaml::from_str(&config).unwrap();
-    run_simulation(account, None);
+    run_simulation(account, None, false);
 }

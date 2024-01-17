@@ -35,7 +35,7 @@ async fn get_results(web::Query(query): web::Query<ScenarioQuery>) -> impl Respo
     let config = std::fs::read_to_string("account.yaml").unwrap();
     let account: sim::cash::Account = serde_yaml::from_str(&config).unwrap();
 
-    let response = sim::run_simulation(account, None);
+    let response = sim::run_simulation(account, None, false);
     HttpResponse::Ok().json(response)
 }
 

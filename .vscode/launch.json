@@ -26,11 +26,11 @@
             "args": [
                 "--run-sim",
                 "--config",
-                "${workspaceFolder}/scenarios/default/fidelity_account.yaml",
+                "${workspaceFolder}/scenarios/default/addition_only_account.yaml",
                 "--excel",
-                "${workspaceFolder}/scenarios/default/fidelity.xlsx",
+                "${workspaceFolder}/scenarios/default/addition_only.xlsx",
                 "--portfolio",
-                "${workspaceFolder}/scenarios/default/6040_portfolio.yaml"
+                "${workspaceFolder}/scenarios/default/conservative_portfolio.yaml"
             ]
         }
     ]
