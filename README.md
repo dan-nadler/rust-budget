@@ -11,8 +11,13 @@ Use this by running `cargo run -- --run-sim --config path/to/your/account.yaml`
 Optionally include `--excel path/to/excel_output.xlsx` to write the time series of cash flows and account 
 balance to an excel file.
 
-
 # Plans for the future
-
 - Basic portfolio management and investment forecasts
 - Monte carlo forecasting
+- Web API
+- Better Excel outputs
+
+# Other thoughts
+- Integrating the API with ChatGPT might be neat if it works well
+- Polars is probably required for a monte carlo simulation
+- Could Excel exports include pre-built charts and formulas?
