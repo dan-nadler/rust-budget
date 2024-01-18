@@ -1,4 +1,5 @@
 use budget::sim;
+mod api;
 use std::process::exit;
 
 fn generate_json_schemas() {
@@ -21,6 +22,13 @@ fn generate_json_schemas() {
 fn main() {
     // parse command line args
     let args: Vec<String> = std::env::args().collect();
+
+    // flag to run the API server
+    let run_api = args.contains(&String::from("--run-api"));
+    if run_api {
+        let _ = api::main();
+        exit(0);
+    }
 
     // flag to generate json schema
     let gen_schema = args.contains(&String::from("--gen-schema"));
@@ -85,4 +93,17 @@ fn main() {
     }
 
     exit(0)
+}
+
+
+#[test]
+fn yaml_to_json() {
+    let path = "scenarios/default/addition_only_account";
+    let yaml_path = format!("{}.yaml", path);
+    let json_path = format!("{}.json", path);
+
+    let yaml = std::fs::read_to_string(yaml_path).unwrap();
+    let account: sim::cash::Account = serde_yaml::from_str(&yaml).unwrap();
+    let json = serde_json::to_string_pretty(&account).unwrap();
+    std::fs::write(json_path, json).unwrap();
 }

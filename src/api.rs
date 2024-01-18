@@ -1,19 +1,13 @@
-use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::middleware::Logger;
+use actix_web::{get, post, App, HttpResponse, HttpServer, Responder};
 use serde::Serialize;
 
-use crate::database;
 use crate::sim;
-
+use crate::sim::cash::Account;
 
 #[get("/")]
 async fn index() -> impl Responder {
     HttpResponse::Ok().body("Hello, world!")
-}
-
-#[get("/scenarios")]
-async fn get_scenarios() -> impl Responder {
-    let response = database::main().await.unwrap();
-    HttpResponse::Ok().json(response)
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -27,14 +21,9 @@ struct ScenarioResponse {
     // Add more fields as needed
 }
 
-#[get("/results")]
-async fn get_results(web::Query(query): web::Query<ScenarioQuery>) -> impl Responder {
-    // TODO: Read scenario from database
-    println!("Scenario: {}", query.scenario);
-
-    let config = std::fs::read_to_string("account.yaml").unwrap();
-    let account: sim::cash::Account = serde_yaml::from_str(&config).unwrap();
-
+#[post("/results")]
+async fn get_results(account: String) -> impl Responder {
+    let account: Account = serde_json::from_str(&account).unwrap();
     let response = sim::run_simulation(account, None, false);
     HttpResponse::Ok().json(response)
 }
@@ -45,8 +34,9 @@ pub async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         App::new()
+            .wrap(Logger::default())
+            .wrap(Logger::new("%a %{User-Agent}i"))
             .service(index)
-            .service(get_scenarios)
             .service(get_results)
     })
     .bind("127.0.0.1:8080")?
