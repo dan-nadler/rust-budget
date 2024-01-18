@@ -30,12 +30,13 @@ async fn get_results(account: String) -> impl Responder {
 
 #[actix_web::main]
 pub async fn main() -> std::io::Result<()> {
-    print!("Starting server...");
+    println!("Starting API server at http://localhost:8080/ ...");
+
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     HttpServer::new(|| {
         App::new()
             .wrap(Logger::default())
-            .wrap(Logger::new("%a %{User-Agent}i"))
             .service(index)
             .service(get_results)
     })

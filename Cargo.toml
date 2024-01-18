@@ -20,6 +20,7 @@ memoize = "0.4.2"
 rayon = "1.8.0"
 polars = { version = "0.36.2", features = ["lazy"] }
 rand_distr = { version = "0.4.3", features = ["serde"] }
+env_logger = "0.10.2"
 
 [lib]
 name = "budget"
