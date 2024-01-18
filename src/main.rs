@@ -1,6 +1,4 @@
 use budget::sim;
-use budget::sim::SimulationResult;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::process::exit;
 
 fn generate_json_schemas() {
@@ -31,20 +29,19 @@ fn main() {
     let run_sim = args.contains(&String::from("--run-sim"));
     let config_file = args.iter().position(|s| s == "--config");
     let mut config = String::new();
-    let mut results: SimulationResult = SimulationResult::new(vec![], vec![]);
 
     // Optional Portfolio conifguration
     let portfolio_file = args.iter().position(|s| s == "--portfolio");
     let mut portfolio: Option<sim::portfolio::Portfolio> = None;
 
-    let num_samples_arg = args.iter().position(|s| s == "--num-samples");
-    let mut num_samples: i64 = 1;
+    // let num_samples_arg = args.iter().position(|s| s == "--num-samples");
+    // let mut num_samples: i64 = 1;
 
-    if num_samples_arg.is_some() {
-        let num_samples_arg = num_samples_arg.unwrap();
-        let num_samples_str = &args[num_samples_arg + 1];
-        num_samples = num_samples_str.parse::<i64>().unwrap_or(1);
-    }
+    // if num_samples_arg.is_some() {
+    //     let num_samples_arg = num_samples_arg.unwrap();
+    //     let num_samples_str = &args[num_samples_arg + 1];
+    //     num_samples = num_samples_str.parse::<i64>().unwrap_or(1);
+    // }
 
     // Output to excel file
     let excel = args.contains(&String::from("--excel"));
@@ -69,7 +66,7 @@ fn main() {
             exit(1)
         }
         let account: sim::cash::Account = serde_yaml::from_str(&config).unwrap();
-        results = sim::run_simulation(account, portfolio, true);
+        let results = sim::run_simulation(account, portfolio, true);
 
         if excel {
             if excel_file.is_none() {

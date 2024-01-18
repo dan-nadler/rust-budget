@@ -1,6 +1,6 @@
 use xlsxwriter::prelude::*;
 
-pub fn write_sim(results: super::SimulationResult, file: &String) {
+pub fn write_sim(results: super::SimulationResult, file: &str) {
     let workbook = Workbook::new(file).unwrap();
     write_account_balance(&workbook, &results);
     write_cash_flows(&workbook, &results);
@@ -17,7 +17,7 @@ fn write_account_balance(workbook: &Workbook, results: &super::SimulationResult)
     for b in &results.balances {
         sheet.write_datetime(row, 0, &b.date.into(), None).unwrap();
         sheet.write_string(row, 1, &b.account_name, None).unwrap();
-        sheet.write_number(row, 2, b.balance.into(), None).unwrap();
+        sheet.write_number(row, 2, b.balance, None).unwrap();
         row += 1;
     }
 }
@@ -35,7 +35,7 @@ fn write_cash_flows(workbook: &Workbook, results: &super::SimulationResult) {
         sheet
             .write_string(row, 1, name.as_ref().unwrap(), None)
             .unwrap();
-        sheet.write_number(row, 2, f.amount.into(), None).unwrap();
+        sheet.write_number(row, 2, f.amount, None).unwrap();
         row += 1;
     }
 }

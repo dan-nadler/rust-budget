@@ -58,13 +58,12 @@ pub fn run_simulation(
         let b = account.balance_at(d);
 
         // TODO: This attributes the full future month's investment income to the first day of the month. This is not correct.
-        if rebalance_frequency.matches(&d, &Some(account.start_date), &Some(account.end_date)) {
-            if portfolio.is_some() {
-                let i =
-                    account.invest(portfolio.as_ref().unwrap()) * rebalance_frequency.fraction();
-                if print_results {
-                    println!("Investment income of {}, on {}", i, d);
-                }
+        if rebalance_frequency.matches(&d, &Some(account.start_date), &Some(account.end_date))
+            && portfolio.is_some()
+        {
+            let i = account.invest(portfolio.as_ref().unwrap()) * rebalance_frequency.fraction();
+            if print_results {
+                println!("Investment income of {}, on {}", i, d);
             }
         }
 

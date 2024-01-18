@@ -78,7 +78,7 @@ impl Portfolio {
         ret
     }
 
-    fn returns_vec(&self, dates: &Vec<chrono::NaiveDate>, name: &String) -> Series {
+    fn returns_vec(&self, dates: &[chrono::NaiveDate], name: &str) -> Series {
         let mut returns: Vec<f64> = vec![];
         for _ in dates.iter() {
             returns.push(self.clone().returns_sample());
@@ -94,15 +94,16 @@ impl Portfolio {
         .expect("Dataframe creation failed.");
 
         for n in 0..num_samples {
-            let r = self.returns_vec(&dates, &format!("Sample {}", n));
+            let r = self.returns_vec(dates, &format!("Sample {}", n));
             let e = format!("Dataframe creation failed on sample number {}.", n);
-            df = df.hstack(&[r]).expect(e.as_str());
+            df = df.hstack(&[r]).unwrap_or_else(|_| { panic!("{}", e) });
         }
 
         df
     }
 }
 
+#[allow(unused)]
 fn date_sequence(start: chrono::NaiveDate, end: chrono::NaiveDate) -> Vec<chrono::NaiveDate> {
     let mut dates = Vec::new();
     let mut current_date = start;

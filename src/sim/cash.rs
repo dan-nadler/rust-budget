@@ -2,6 +2,8 @@ use chrono::{Datelike, NaiveDate};
 use memoize::memoize;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
+#[allow(unused_imports)]
 use std::hash::{Hash, Hasher};
 
 // a list contianing the number of days in each month
@@ -273,7 +275,7 @@ impl std::hash::Hash for Account {
 #[test]
 fn test_account_hash() {
     // test that the account hash is based on the name
-    let mut account1 = Account::new(
+    let account1 = Account::new(
         "Test Account".to_string(),
         0.0,
         vec![CashFlow::new(
@@ -288,7 +290,7 @@ fn test_account_hash() {
         NaiveDate::from_ymd_opt(2020, 12, 31).unwrap(),
     );
 
-    let mut account2 = Account::new(
+    let account2 = Account::new(
         "Test Account 2".to_string(),
         0.0,
         vec![CashFlow::new(
@@ -327,7 +329,7 @@ pub fn get_account_balance_at(account: Account, date: chrono::NaiveDate) -> f64 
 
 #[test]
 fn test_get_account_balance_at() {
-    let mut account = Account::new(
+    let account = Account::new(
         "Test Account".to_string(),
         0.0,
         vec![CashFlow::new(
