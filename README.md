@@ -12,13 +12,13 @@ Optionally include `--excel path/to/excel_output.xlsx` to write the time series 
 balance to an excel file.
 
 # Plans for the future
-- [x] ~Define portfolios to use with accounts~ ✔️
-- [x] ~Excel exports~ ✔️
+- [x] ~Define portfolios to use with accounts~ ✅
+- [x] ~Excel exports~ ✅
 - [ ] Basic portfolio management and investment forecasts
 - [ ] Monte carlo forecasting
 - [ ] Web API
 - [ ] Better Excel exports
-  - [ ] Pivots
+  - [x] ~Pivots~ ✅
   - [ ] Charts
 
 # Other thoughts
